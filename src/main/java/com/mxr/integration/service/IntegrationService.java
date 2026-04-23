@@ -45,6 +45,10 @@ public class IntegrationService {
         this.repo = personRepoImpl;
     }
 
+    public PersonRepoImpl getRepo() {
+        return repo;
+    }
+
     public ProcessedResponse savePerson(String name) {
         validateName(name);
 
@@ -100,8 +104,6 @@ public class IntegrationService {
 
     public PaginatedResponse<Person> searchProfilesByQuery(String q, int page, int limit) {
         validatePage(page);
-        int effectiveLimit = normalizeLimit(limit);
-
         QueryFilterDTO filter = parseQuery(q);
 
         return filterProfiles(
@@ -115,7 +117,7 @@ public class IntegrationService {
                 "created_at",
                 "desc",
                 page,
-                effectiveLimit);
+                limit);
     }
 
     public QueryFilterDTO parseQuery(String q) {
@@ -199,6 +201,10 @@ public class IntegrationService {
             return DEFAULT_LIMIT;
         }
         return (limit > MAX_LIMIT) ? MAX_LIMIT : limit;
+    }
+
+    public int getEffectiveLimit(int limit) {
+        return normalizeLimit(limit);
     }
 
     private void validatePage(int page) {

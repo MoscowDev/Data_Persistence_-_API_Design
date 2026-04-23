@@ -79,22 +79,15 @@ public class NaturalLanguageQueryParser {
 
         if (containsWholeWord(lowerQuery, "teenager") || containsWholeWord(lowerQuery, "teen")) {
             filter.setAgeGroup("teenager");
-            filter.setMinAge(13);
-            filter.setMaxAge(19);
             matched = true;
         } else if (containsWholeWord(lowerQuery, "adult")) {
             filter.setAgeGroup("adult");
-            filter.setMinAge(20);
-            filter.setMaxAge(59);
             matched = true;
         } else if (containsWholeWord(lowerQuery, "child") || containsWholeWord(lowerQuery, "kid")) {
             filter.setAgeGroup("child");
-            filter.setMinAge(0);
-            filter.setMaxAge(12);
             matched = true;
         } else if (containsWholeWord(lowerQuery, "senior") || containsWholeWord(lowerQuery, "elderly")) {
             filter.setAgeGroup("senior");
-            filter.setMinAge(60);
             matched = true;
         }
 
@@ -118,8 +111,6 @@ public class NaturalLanguageQueryParser {
                 } else if (lowerQuery.contains("country") || lowerQuery.contains("nation")) {
                     filter.setMinCountryProbability(prob);
                 } else {
-                    // Default to gender probability if ambiguous? 
-                    // Or set both?
                     filter.setMinGenderProbability(prob);
                 }
                 matched = true;
