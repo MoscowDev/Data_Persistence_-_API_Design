@@ -69,10 +69,10 @@ public class NaturalLanguageQueryParser {
         QueryFilterDTO filter = new QueryFilterDTO();
         boolean matched = false;
 
-        if (containsWholeWord(lowerQuery, "female") || containsWholeWord(lowerQuery, "women") || containsWholeWord(lowerQuery, "girls")) {
+        if (containsWholeWord(lowerQuery, "female") || containsWholeWord(lowerQuery, "women") || containsWholeWord(lowerQuery, "girls") || containsWholeWord(lowerQuery, "woman") || containsWholeWord(lowerQuery, "girl")) {
             filter.setGender("female");
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "male") || containsWholeWord(lowerQuery, "men") || containsWholeWord(lowerQuery, "boys")) {
+        } else if (containsWholeWord(lowerQuery, "male") || containsWholeWord(lowerQuery, "men") || containsWholeWord(lowerQuery, "boys") || containsWholeWord(lowerQuery, "man") || containsWholeWord(lowerQuery, "boy")) {
             filter.setGender("male");
             matched = true;
         }

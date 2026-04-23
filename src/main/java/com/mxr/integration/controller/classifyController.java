@@ -40,18 +40,8 @@ public class classifyController {
 
     @PostMapping("/api/profiles")
     public ResponseEntity<ProcessedResponse> savePerson(@Valid @RequestBody NewEntityRequest request) {
-        try {
-            ProcessedResponse response = integrationService.savePerson(request.getName());
-
-            if (response instanceof PersonExistsResponse) {
-                return new ResponseEntity<>(response, HttpStatus.CONFLICT);
-            }
-
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (Exception e) {
-            // Log error
-            throw e;
-        }
+        ProcessedResponse response = integrationService.savePerson(request.getName());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/api/profiles/{id}")

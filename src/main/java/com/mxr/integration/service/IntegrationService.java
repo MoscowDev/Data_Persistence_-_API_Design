@@ -51,7 +51,10 @@ public class IntegrationService {
         if (repo.existsByName(name)) {
             Person person = repo.findByNameIgnoreCase(name)
                     .orElseThrow(() -> new PersonNotFoundException("Person not found"));
-            return new PersonExistsResponse("success", person, "Person with name " + name + " already exists");
+            return ProcessedResponse.builder()
+                    .status("success")
+                    .data(person)
+                    .build();
         }
 
         GenderizeResponse genderizeResponse = getGenderizeResponse(name);
