@@ -40,7 +40,7 @@ public class classifyController {
     private final DatabaseSeeder databaseSeeder;
 
     public classifyController(IntegrationService integrationService, NaturalQueryParser nlpParser,
-            DatabaseSeeder databaseSeeder) {
+                              DatabaseSeeder databaseSeeder) {
         this.integrationService = integrationService;
         this.nlpParser = nlpParser;
         this.databaseSeeder = databaseSeeder;
@@ -71,15 +71,15 @@ public class classifyController {
 
     @GetMapping("/api/profiles")
     public ProfilePageResponse getProfiles(@RequestParam(required = false) String gender,
-            @RequestParam(name = "country_id", required = false) String countryId, @RequestParam(name = "age_group", required = false) String ageGroup,
-            @RequestParam(name = "min_age", required = false) Integer minimumAge,
-            @RequestParam(name = "max_age", required = false) Integer maximumAge,
-            @RequestParam(name = "min_country_probability", required = false) Double minCountryProbability,
-            @RequestParam(name = "min_gender_probability", required = false) Double minGenderProbability,
-            @RequestParam(defaultValue = "created_at") String sort_by,
-            @RequestParam(defaultValue = "asc") String order,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit) {
+                                           @RequestParam(name = "country_id", required = false) String countryId, @RequestParam(name = "age_group", required = false) String ageGroup,
+                                           @RequestParam(name = "min_age", required = false) Integer minimumAge,
+                                           @RequestParam(name = "max_age", required = false) Integer maximumAge,
+                                           @RequestParam(name = "min_country_probability", required = false) Double minCountryProbability,
+                                           @RequestParam(name = "min_gender_probability", required = false) Double minGenderProbability,
+                                           @RequestParam(defaultValue = "created_at") String sort_by,
+                                           @RequestParam(defaultValue = "asc") String order,
+                                           @RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "10") int limit) {
 
         if (limit > 50)
             limit = 50;
@@ -98,7 +98,7 @@ public class classifyController {
                 minCountryProbability, minGenderProbability,
                 pageable);
 
-        return mapSpecToMultipleProcessedResponse(result, page+1, limit);
+        return mapSpecToMultipleProcessedResponse(result, page, limit);
     }
 
     @DeleteMapping("/api/profiles/{id}")
