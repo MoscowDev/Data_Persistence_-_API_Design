@@ -1,8 +1,29 @@
 package com.mxr.integration.controller;
 
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mxr.integration.Response.MultipleProcessedResponse;
+import com.mxr.integration.Response.PersonExistsResponse;
+import com.mxr.integration.Response.PersonSummary;
+import com.mxr.integration.Response.ProcessedResponse;
+import com.mxr.integration.Response.ProfilePageResponse;
+import com.mxr.integration.model.Person;
+import com.mxr.integration.request.NewEntityRequest;
+import com.mxr.integration.service.IntegrationService;
+import com.mxr.integration.service.DatabaseSeeder;
+import com.mxr.integration.queryparser.NaturalQueryParser;
+import com.mxr.integration.queryparser.ParsedQuery;
+import com.mxr.integration.exceptions.InvalidQueryParametersException;
+import com.mxr.integration.exceptions.UninterpretableQueryException;
+
+import jakarta.validation.Valid;
+
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,95 +32,142 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.mxr.integration.Response.MultipleProcessedResponse;
-import com.mxr.integration.Response.PaginatedResponse;
-import com.mxr.integration.Response.PersonExistsResponse;
-import com.mxr.integration.Response.PersonSummary;
-import com.mxr.integration.Response.ProcessedResponse;
-import com.mxr.integration.exceptions.PersonNotFoundException;
-import com.mxr.integration.model.Person;
-import com.mxr.integration.request.NewEntityRequest;
-import com.mxr.integration.service.IntegrationService;
-
-import jakarta.validation.Valid;
 
 @RestController
 public class classifyController {
-
     private final IntegrationService integrationService;
+    private final NaturalQueryParser nlpParser;
+    private final DatabaseSeeder databaseSeeder;
 
-    public classifyController(IntegrationService integrationService) {
+    public classifyController(IntegrationService integrationService, NaturalQueryParser nlpParser,
+            DatabaseSeeder databaseSeeder) {
         this.integrationService = integrationService;
+        this.nlpParser = nlpParser;
+        this.databaseSeeder = databaseSeeder;
     }
 
     @GetMapping("/")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("OK");
+        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
     @PostMapping("/api/profiles")
     public ResponseEntity<ProcessedResponse> savePerson(@Valid @RequestBody NewEntityRequest request) {
-        if (integrationService.getRepo().existsByName(request.getName())) {
-            Person person = integrationService.getRepo().findByNameIgnoreCase(request.getName())
-                    .orElseThrow(() -> new PersonNotFoundException("Person not found"));
-            ProcessedResponse response = ProcessedResponse.builder()
-                    .status("success")
-                    .data(person)
-                    .build();
+        String name = request.getName();
+        ProcessedResponse response = integrationService.savePerson(name);
+        if (response instanceof PersonExistsResponse) {
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        ProcessedResponse response = integrationService.savePerson(request.getName());
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/api/profiles/{id}")
     public ProcessedResponse getUserById(@PathVariable UUID id) {
+
         Person person = integrationService.getPersonById(id);
+
+        return mapToProcessedResponse(person);
+    }
+
+    @GetMapping("/api/profiles")
+    public ProfilePageResponse getProfiles(@RequestParam(required = false) String gender,
+            @RequestParam(name = "country_id", required = false) String countryId, @RequestParam(name = "age_group", required = false) String ageGroup,
+            @RequestParam(name = "min_age", required = false) Integer minimumAge,
+            @RequestParam(name = "max_age", required = false) Integer maximumAge,
+            @RequestParam(name = "min_country_probability", required = false) Double minCountryProbability,
+            @RequestParam(name = "min_gender_probability", required = false) Double minGenderProbability,
+            @RequestParam(defaultValue = "created_at") String sort_by,
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+
+        if (limit > 50)
+            limit = 50;
+        if (limit < 1)
+            limit = 1;
+        if (page < 1)
+            page = 1;
+
+        Sort.Direction direction = Sort.Direction.fromString(order);
+        String javaField = IntegrationService.mapSortField(sort_by);
+        PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by(direction, javaField));
+
+        Page<Person> result = integrationService.searchPeople(
+                gender, countryId, ageGroup,
+                minimumAge, maximumAge,
+                minCountryProbability, minGenderProbability,
+                pageable);
+
+        return mapSpecToMultipleProcessedResponse(result, page+1, limit);
+    }
+
+    @DeleteMapping("/api/profiles/{id}")
+    public ResponseEntity<String> deleteUserById(@PathVariable UUID id) {
+        integrationService.deletePersonById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/profiles/search")
+    public ProfilePageResponse searchByNaturalLanguage(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+
+        if (q == null || q.isBlank()) {
+            throw new InvalidQueryParametersException("Invalid query parameters");
+        }
+
+        ParsedQuery parsed = nlpParser.parse(q);
+
+        if (parsed == null) {
+            throw new UninterpretableQueryException("Unable to interpret query");
+        }
+
+        if (limit > 50)
+            limit = 50;
+        if (page < 1)
+            page = 1;
+
+        PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.ASC, "createdAt"));
+
+        Page<Person> result = integrationService.searchPeople(
+                parsed.getGender(),
+                parsed.getCountryId(),
+                parsed.getAgeGroup(),
+                parsed.getMinAge(),
+                parsed.getMaxAge(),
+                null, null,
+                pageable);
+
+        return mapSpecToMultipleProcessedResponse(result, page, limit);
+    }
+
+    private ProcessedResponse mapToProcessedResponse(Person person) {
         return ProcessedResponse.builder()
                 .status("success")
                 .data(person)
                 .build();
     }
 
-    @GetMapping("/api/profiles")
-    public ResponseEntity<PaginatedResponse<Person>> getProfiles(
-            @RequestParam(required = false) String gender,
-            @RequestParam(required = false, name = "age_group") String age_group,
-            @RequestParam(required = false, name = "country_id") String country_id,
-            @RequestParam(required = false, name = "min_age") Integer min_age,
-            @RequestParam(required = false, name = "max_age") Integer max_age,
-            @RequestParam(required = false, name = "min_gender_probability") Double min_gender_probability,
-            @RequestParam(required = false, name = "min_country_probability") Double min_country_probability,
-            @RequestParam(required = false, name = "sort_by", defaultValue = "created_at") String sort_by,
-            @RequestParam(required = false, defaultValue = "desc") String order,
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @RequestParam(required = false) Integer limit) {
-
-        return ResponseEntity.ok(integrationService.filterProfiles(
-                gender, age_group, country_id, min_age, max_age,
-                min_gender_probability, min_country_probability,
-                sort_by, order,
-                page == null ? 1 : page,
-                integrationService.getEffectiveLimit(limit)));
+    private ProfilePageResponse mapSpecToMultipleProcessedResponse(Page<Person> page, int pageNum, int limit) {
+        return ProfilePageResponse.builder()
+                .status("success")
+                .page(pageNum)
+                .limit(limit)
+                .total(page.getTotalElements())
+                .data(page.getContent())
+                .build();
     }
 
-    @DeleteMapping("/api/profiles/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable UUID id) {
-        integrationService.deletePersonById(id);
-        return ResponseEntity.noContent().build();
+    @PostMapping("/api/admin/seed")
+    public ResponseEntity<String> seedDatabase() {
+        try {
+            databaseSeeder.seedDatabase();
+            return ResponseEntity.ok("Database seeding completed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Database seeding failed: " + e.getMessage());
+        }
     }
 
-
-    @GetMapping("/api/profiles/search")
-    public ResponseEntity<PaginatedResponse<Person>> searchProfiles(
-            @RequestParam(required = false) String q,
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @RequestParam(required = false) Integer limit) {
-
-        return ResponseEntity.ok(integrationService.searchProfilesByQuery(q,
-                page == null ? 1 : page,
-                integrationService.getEffectiveLimit(limit)));
-    }
 }

@@ -15,10 +15,10 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
+        config.applyPermitDefaultValues();
         config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.addAllowedOriginPattern("*");
-        config.setAllowCredentials(true);
+        config.addAllowedMethod("GET");
+         config.addAllowedOriginPattern("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

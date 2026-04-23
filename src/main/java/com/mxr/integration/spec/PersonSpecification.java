@@ -1,6 +1,7 @@
 package com.mxr.integration.spec;
 
 import org.springframework.data.jpa.domain.Specification;
+
 import com.mxr.integration.model.Person;
 
 public class PersonSpecification {
@@ -20,27 +21,28 @@ public class PersonSpecification {
                 : cb.equal(cb.lower(root.get("ageGroup")), ageGroup.toLowerCase());
     }
 
-    public static Specification<Person> hasName(String name) {
-        return (root, query, cb) -> name == null ? null : cb.equal(cb.lower(root.get("name")), name.toLowerCase());
+    // public static Specification<Person> hasName(String name) {
+    // return (root, query, cb) -> name == null ? null :
+    // cb.equal(cb.lower(root.get("name")), name.toLowerCase());
+    // }
+
+    public static Specification<Person> greaterThanAge(Integer minimumAge) {
+        return (root, query, cb) -> minimumAge == null ? cb.conjunction()
+                : cb.greaterThanOrEqualTo(root.get("age"), minimumAge);
     }
 
-    public static Specification<Person> minAge(Integer minAge) {
-        return (root, query, cb) -> minAge == null ? null
-                : cb.greaterThanOrEqualTo(root.get("age"), minAge);
+    public static Specification<Person> lessThanAge(Integer maximumAge) {
+        return (root, query, cb) -> maximumAge == null ? cb.conjunction()
+                : cb.lessThanOrEqualTo(root.get("age"), maximumAge);
     }
 
-    public static Specification<Person> maxAge(Integer maxAge) {
-        return (root, query, cb) -> maxAge == null ? null
-                : cb.lessThanOrEqualTo(root.get("age"), maxAge);
+    public static Specification<Person> greaterThanGenderProbability(Double genderProbability) {
+        return (root, query, cb) -> genderProbability == null ? cb.conjunction()
+                : cb.greaterThanOrEqualTo(root.get("genderProbability"), genderProbability);
     }
 
-    public static Specification<Person> minGenderProbability(Double minProb) {
-        return (root, query, cb) -> minProb == null ? null
-                : cb.greaterThanOrEqualTo(root.get("genderProbability"), minProb);
-    }
-
-    public static Specification<Person> minCountryProbability(Double minProb) {
-        return (root, query, cb) -> minProb == null ? null
-                : cb.greaterThanOrEqualTo(root.get("countryProbability"), minProb);
+    public static Specification<Person> greaterThanCountryProbability(Double countryProbability) {
+        return (root, query, cb) -> countryProbability == null ? cb.conjunction()
+                : cb.greaterThanOrEqualTo(root.get("countryProbability"), countryProbability);
     }
 }

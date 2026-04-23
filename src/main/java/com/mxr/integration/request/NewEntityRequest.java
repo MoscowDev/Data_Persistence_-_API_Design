@@ -1,11 +1,12 @@
 package com.mxr.integration.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class NewEntityRequest {
-
-    @NotBlank(message = "name is required")
+    @Valid
+    @NotBlank
     private String name;
 }

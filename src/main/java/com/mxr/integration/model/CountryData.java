@@ -7,10 +7,6 @@ import lombok.Data;
 public class CountryData {
     @JsonProperty("country_id")
     String countryId;
-
-    @JsonProperty("country_name")
-    String countryName;
-
     double probability;
 }
 

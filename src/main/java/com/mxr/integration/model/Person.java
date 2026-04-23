@@ -1,9 +1,10 @@
 package com.mxr.integration.model;
 
 import jakarta.persistence.Entity;
+
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.Column;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
+
 import java.util.UUID;
 import com.fasterxml.uuid.Generators;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,19 +23,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+
+@Table(name = "profiles")
 public class Person {
     @Id
-    private UUID id;
-
+    UUID id;
+    
+    @PrePersist
+    public void generateId() {
+        this.id = Generators.timeBasedEpochGenerator().generate();
+    }
+    
     @NotNull
-    @Column(unique = true)
     private String name;
 
     @NotNull
     private String gender;
 
     @JsonProperty("gender_probability")
-    private float genderProbability;
+    private double genderProbability;
+
+    @JsonProperty("country_name")
+    private String countryName;
 
     private int age;
 
@@ -43,23 +54,13 @@ public class Person {
     @JsonProperty("country_id")
     private String countryId;
 
-    @JsonProperty("country_name")
-    private String countryName;
-
     @JsonProperty("country_probability")
-    private float countryProbability;
+    private double countryProbability;
 
     @JsonProperty("created_at")
-    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
     private Instant createdAt;
 
-    @PrePersist
-    public void prePersist() {
-        if (this.id == null) {
-            this.id = Generators.timeBasedEpochGenerator().generate();
-        }
-        if (this.createdAt == null) {
-            this.createdAt = Instant.now();
-        }
-    }
+
+    
 }
