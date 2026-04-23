@@ -69,15 +69,15 @@ public class NaturalLanguageQueryParser {
         QueryFilterDTO filter = new QueryFilterDTO();
         boolean matched = false;
 
-        if (containsWholeWord(lowerQuery, "female")) {
+        if (containsWholeWord(lowerQuery, "female") || containsWholeWord(lowerQuery, "women") || containsWholeWord(lowerQuery, "girls")) {
             filter.setGender("female");
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "male")) {
+        } else if (containsWholeWord(lowerQuery, "male") || containsWholeWord(lowerQuery, "men") || containsWholeWord(lowerQuery, "boys")) {
             filter.setGender("male");
             matched = true;
         }
 
-        if (containsWholeWord(lowerQuery, "teenager")) {
+        if (containsWholeWord(lowerQuery, "teenager") || containsWholeWord(lowerQuery, "teen")) {
             filter.setAgeGroup("teenager");
             filter.setMinAge(13);
             filter.setMaxAge(19);
@@ -87,12 +87,12 @@ public class NaturalLanguageQueryParser {
             filter.setMinAge(20);
             filter.setMaxAge(59);
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "child")) {
+        } else if (containsWholeWord(lowerQuery, "child") || containsWholeWord(lowerQuery, "kid")) {
             filter.setAgeGroup("child");
             filter.setMinAge(0);
             filter.setMaxAge(12);
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "senior")) {
+        } else if (containsWholeWord(lowerQuery, "senior") || containsWholeWord(lowerQuery, "elderly")) {
             filter.setAgeGroup("senior");
             filter.setMinAge(60);
             matched = true;
@@ -108,6 +108,22 @@ public class NaturalLanguageQueryParser {
         if (maxAge != null) {
             filter.setMaxAge(maxAge);
             matched = true;
+        }
+
+        if (containsWholeWord(lowerQuery, "probability") || containsWholeWord(lowerQuery, "confidence")) {
+            Double prob = extractProbability(lowerQuery);
+            if (prob != null) {
+                if (lowerQuery.contains("gender") || lowerQuery.contains("sex")) {
+                    filter.setMinGenderProbability(prob);
+                } else if (lowerQuery.contains("country") || lowerQuery.contains("nation")) {
+                    filter.setMinCountryProbability(prob);
+                } else {
+                    // Default to gender probability if ambiguous? 
+                    // Or set both?
+                    filter.setMinGenderProbability(prob);
+                }
+                matched = true;
+            }
         }
 
         String countryId = extractCountry(lowerQuery);
@@ -135,6 +151,17 @@ public class NaturalLanguageQueryParser {
         Matcher matcher = Pattern.compile("\\b" + Pattern.quote(keyword) + "\\s+(\\d{1,3})\\b").matcher(query);
         if (matcher.find()) {
             return Integer.valueOf(matcher.group(1));
+        }
+        return null;
+    }
+
+    private static Double extractProbability(String query) {
+        Matcher matcher = Pattern.compile("(\\d+(\\.\\d+)?)\\b").matcher(query);
+        while (matcher.find()) {
+            double val = Double.parseDouble(matcher.group(1));
+            if (val >= 0 && val <= 1) {
+                return val;
+            }
         }
         return null;
     }

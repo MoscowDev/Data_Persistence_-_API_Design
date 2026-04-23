@@ -21,13 +21,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         String message = ex.getMessage() == null ? "Bad request" : ex.getMessage();
-        HttpStatus status = "uninterpretable q".equalsIgnoreCase(message)
-                ? HttpStatus.UNPROCESSABLE_ENTITY
-                : HttpStatus.BAD_REQUEST;
-
+        
         return new ResponseEntity<>(
                 new ErrorResponse("error", message),
-                status
+                HttpStatus.BAD_REQUEST
         );
     }
 

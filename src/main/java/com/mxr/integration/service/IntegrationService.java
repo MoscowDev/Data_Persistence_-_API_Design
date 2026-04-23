@@ -51,7 +51,7 @@ public class IntegrationService {
         if (repo.existsByName(name)) {
             Person person = repo.findByNameIgnoreCase(name)
                     .orElseThrow(() -> new PersonNotFoundException("Person not found"));
-            return new PersonExistsResponse("success", person, "Profile already exists");
+            return new PersonExistsResponse("success", person, "Person with name " + name + " already exists");
         }
 
         GenderizeResponse genderizeResponse = getGenderizeResponse(name);
@@ -178,6 +178,15 @@ public class IntegrationService {
         if ("gender_probability".equals(normalized) || "genderprobability".equals(normalized)) {
             return Sort.by(direction, "genderProbability");
         }
+        if ("country_probability".equals(normalized) || "countryprobability".equals(normalized)) {
+            return Sort.by(direction, "countryProbability");
+        }
+        if ("country_id".equals(normalized) || "countryid".equals(normalized)) {
+            return Sort.by(direction, "countryId");
+        }
+        if ("name".equals(normalized)) {
+            return Sort.by(direction, "name");
+        }
 
         throw new IllegalArgumentException("invalid sort_by");
     }
@@ -186,12 +195,12 @@ public class IntegrationService {
         if (limit <= 0) {
             return DEFAULT_LIMIT;
         }
-        return Math.min(limit, MAX_LIMIT);
+        return (limit > MAX_LIMIT) ? MAX_LIMIT : limit;
     }
 
     private void validatePage(int page) {
         if (page < 1) {
-            throw new IllegalArgumentException("page must be greater than or equal to 1");
+            throw new IllegalArgumentException("Page number must be 1 or greater");
         }
     }
 

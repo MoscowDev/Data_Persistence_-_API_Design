@@ -39,27 +39,27 @@ public class Person {
     @NotNull
     private String gender;
 
-    @JsonProperty("gender_probability")
+    @JsonProperty("genderProbability")
     private double genderProbability;
 
-    @JsonProperty("sample_size")
+    @JsonProperty("sampleSize")
     private int sampleSize;
 
     private int age;
 
-    @JsonProperty("age_group")
+    @JsonProperty("ageGroup")
     private String ageGroup;
 
-    @JsonProperty("country_id")
+    @JsonProperty("countryId")
     private String countryId;
 
-    @JsonProperty("country_name")
+    @JsonProperty("countryName")
     private String countryName;
 
-    @JsonProperty("country_probability")
+    @JsonProperty("countryProbability")
     private double countryProbability;
 
-    @JsonProperty("created_at")
+    @JsonProperty("createdAt")
     @CreationTimestamp
     private Instant createdAt;
 }
