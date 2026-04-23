@@ -64,25 +64,7 @@ public class classifyController {
     }
 
     @GetMapping("/api/profiles")
-    public MultipleProcessedResponse getUsersByParams(@RequestParam(required = false) String gender,
-                                                      @RequestParam(required = false, name = "country_id") String countryId,
-                                                      @RequestParam(required = false, name = "age_group") String ageGroup) {
-        List<PersonSummary> response = integrationService.searchPeople(gender, countryId, ageGroup);
-        return MultipleProcessedResponse.builder()
-                .status("success")
-                .count(response.size())
-                .data(response)
-                .build();
-    }
-
-    @DeleteMapping("/api/profiles/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable UUID id) {
-        integrationService.deletePersonById(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/api/profiles/filter")
-    public ResponseEntity<PaginatedResponse<Person>> filterProfiles(
+    public ResponseEntity<PaginatedResponse<Person>> getProfiles(
             @RequestParam(required = false) String gender,
             @RequestParam(required = false, name = "age_group") String age_group,
             @RequestParam(required = false, name = "country_id") String country_id,
@@ -92,21 +74,32 @@ public class classifyController {
             @RequestParam(required = false, name = "min_country_probability") Double min_country_probability,
             @RequestParam(required = false, name = "sort_by", defaultValue = "created_at") String sort_by,
             @RequestParam(required = false, defaultValue = "desc") String order,
-            @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "5") int limit) {
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false) Integer limit) {
 
         return ResponseEntity.ok(integrationService.filterProfiles(
                 gender, age_group, country_id, min_age, max_age,
                 min_gender_probability, min_country_probability,
-                sort_by, order, page, limit));
+                sort_by, order,
+                page == null ? 1 : page,
+                integrationService.getEffectiveLimit(limit)));
     }
+
+    @DeleteMapping("/api/profiles/{id}")
+    public ResponseEntity<Void> deleteUserById(@PathVariable UUID id) {
+        integrationService.deletePersonById(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @GetMapping("/api/profiles/search")
     public ResponseEntity<PaginatedResponse<Person>> searchProfiles(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "5") int limit) {
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false) Integer limit) {
 
-        return ResponseEntity.ok(integrationService.searchProfilesByQuery(q, page, integrationService.getEffectiveLimit(limit)));
+        return ResponseEntity.ok(integrationService.searchProfilesByQuery(q,
+                page == null ? 1 : page,
+                integrationService.getEffectiveLimit(limit)));
     }
 }

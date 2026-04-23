@@ -25,13 +25,6 @@ public class Person {
     @Id
     private UUID id;
 
-    @PrePersist
-    public void generateId() {
-        if (this.id == null) {
-            this.id = Generators.timeBasedEpochGenerator().generate();
-        }
-    }
-    
     @NotNull
     @Column(unique = true)
     private String name;
@@ -40,10 +33,7 @@ public class Person {
     private String gender;
 
     @JsonProperty("gender_probability")
-    private double genderProbability;
-
-    @JsonProperty("sample_size")
-    private int sampleSize;
+    private float genderProbability;
 
     private int age;
 
@@ -57,8 +47,19 @@ public class Person {
     private String countryName;
 
     @JsonProperty("country_probability")
-    private double countryProbability;
+    private float countryProbability;
 
     @JsonProperty("created_at")
-    private Instant createdAt = Instant.now();
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.id == null) {
+            this.id = Generators.timeBasedEpochGenerator().generate();
+        }
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+    }
 }

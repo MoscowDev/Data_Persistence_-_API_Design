@@ -8,11 +8,13 @@ import lombok.Data;
 
 @Data
 @Builder
-@JsonPropertyOrder({"status", "page", "limit", "total", "data"})
+@JsonPropertyOrder({"status", "page", "limit", "total", "total_pages", "data"})
 public class PaginatedResponse<T> {
     private String status;
     private int page;
     private int limit;
+    @JsonProperty("total_pages")
+    private int totalPages;
     private long total;
     private List<T> data;
 }

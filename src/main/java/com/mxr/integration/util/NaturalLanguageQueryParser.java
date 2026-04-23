@@ -77,27 +77,33 @@ public class NaturalLanguageQueryParser {
             matched = true;
         }
 
-        if (containsWholeWord(lowerQuery, "teenager") || containsWholeWord(lowerQuery, "teen")) {
+        if (containsWholeWord(lowerQuery, "teenager") || containsWholeWord(lowerQuery, "teen") || containsWholeWord(lowerQuery, "teens")) {
             filter.setAgeGroup("teenager");
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "adult")) {
+        } else if (containsWholeWord(lowerQuery, "adult") || containsWholeWord(lowerQuery, "adults")) {
             filter.setAgeGroup("adult");
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "child") || containsWholeWord(lowerQuery, "kid")) {
+        } else if (containsWholeWord(lowerQuery, "child") || containsWholeWord(lowerQuery, "kid") || containsWholeWord(lowerQuery, "children") || containsWholeWord(lowerQuery, "kids")) {
             filter.setAgeGroup("child");
             matched = true;
-        } else if (containsWholeWord(lowerQuery, "senior") || containsWholeWord(lowerQuery, "elderly")) {
+        } else if (containsWholeWord(lowerQuery, "senior") || containsWholeWord(lowerQuery, "elderly") || containsWholeWord(lowerQuery, "seniors") || containsWholeWord(lowerQuery, "old")) {
             filter.setAgeGroup("senior");
             matched = true;
         }
 
-        Integer minAge = extractAgeBoundary(lowerQuery, "above", "over");
+        if (containsWholeWord(lowerQuery, "young")) {
+            filter.setMinAge(16);
+            filter.setMaxAge(24);
+            matched = true;
+        }
+
+        Integer minAge = extractAgeBoundary(lowerQuery, "above", "over", "older than", "greater than");
         if (minAge != null) {
             filter.setMinAge(minAge);
             matched = true;
         }
 
-        Integer maxAge = extractAgeBoundary(lowerQuery, "below", "under");
+        Integer maxAge = extractAgeBoundary(lowerQuery, "below", "under", "younger than", "less than");
         if (maxAge != null) {
             filter.setMaxAge(maxAge);
             matched = true;
@@ -130,12 +136,14 @@ public class NaturalLanguageQueryParser {
         return text.matches(".*\\b" + Pattern.quote(word) + "\\b.*");
     }
 
-    private static Integer extractAgeBoundary(String query, String keyword1, String keyword2) {
-        Integer value = extractNumberAfterKeyword(query, keyword1);
-        if (value != null) {
-            return value;
+    private static Integer extractAgeBoundary(String query, String... keywords) {
+        for (String keyword : keywords) {
+            Integer value = extractNumberAfterKeyword(query, keyword);
+            if (value != null) {
+                return value;
+            }
         }
-        return extractNumberAfterKeyword(query, keyword2);
+        return null;
     }
 
     private static Integer extractNumberAfterKeyword(String query, String keyword) {
@@ -162,7 +170,15 @@ public class NaturalLanguageQueryParser {
                 .filter(entry -> query.contains(entry.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .orElse(null);
+                .orElseGet(() -> {
+                    // Also check for 2-letter country IDs
+                    for (String code : COUNTRY_MAPPING.values()) {
+                        if (containsWholeWord(query, code.toLowerCase())) {
+                            return code;
+                        }
+                    }
+                    return null;
+                });
     }
 
     public static class QueryFilterDTO {

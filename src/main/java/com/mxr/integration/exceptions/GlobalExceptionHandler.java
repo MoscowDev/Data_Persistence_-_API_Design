@@ -20,7 +20,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        String message = ex.getMessage() == null ? "Bad request" : ex.getMessage();
+        String message = ex.getMessage() == null ? "Invalid query parameters" : ex.getMessage();
+        if ("uninterpretable q".equals(message)) {
+            message = "Unable to interpret query";
+        } else if ("invalid sort_by".equals(message) || "invalid page".equals(message)) {
+            message = "Invalid query parameters";
+        }
         
         return new ResponseEntity<>(
                 new ErrorResponse("error", message),
@@ -30,13 +35,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(fieldError -> fieldError.getDefaultMessage())
-                .orElse("Invalid request body");
-
         return new ResponseEntity<>(
-                new ErrorResponse("error", message),
+                new ErrorResponse("error", "Invalid query parameters"),
                 HttpStatus.BAD_REQUEST
         );
     }

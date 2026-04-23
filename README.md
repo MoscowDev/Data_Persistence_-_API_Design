@@ -85,28 +85,47 @@ src/
 
 ## API Examples
 
-Here’s a sample API usage (replace with your real endpoints):
+### Profile Classification
+Classify a person by name, fetching data from Genderize, Agify, and Nationalize.
 
 ```http
-GET /api/v1/items
-POST /api/v1/items
+POST /api/profiles
+Content-Type: application/json
+
+{
+  "name": "John"
+}
 ```
 
-- Example request:
-  ```bash
-  curl -X POST http://localhost:3000/api/v1/items \
-    -H "Content-Type: application/json" \
-    -d '{"name": "Example item", "value": 42}'
-  ```
+### Filtering Profiles
+Advanced filtering with pagination and sorting.
 
-- Example response:
-  ```json
-  {
-    "id": 1,
-    "name": "Example item",
-    "value": 42
-  }
-  ```
+```http
+GET /api/profiles?gender=male&age_group=adult&sort_by=age&order=desc&page=1&limit=10
+```
+
+### Natural Language Search
+Search profiles using natural language queries.
+
+```http
+GET /api/profiles/search?q=men older than 25 in Nigeria
+```
+
+## Natural Language Query Support
+The system supports the following keywords:
+- **Gender**: female, women, girls, woman, girl, male, men, boys, man, boy
+- **Age Groups**: child, kid, children, kids, teenager, teen, teens, adult, adults, senior, seniors, elderly, old
+- **Operators**: older than, younger than, above, over, below, under, greater than, less than
+- **Probabilities**: probability, confidence (e.g., "gender probability 0.8")
+- **Countries**: Country names (e.g., Nigeria, Kenya) or 2-letter codes (NG, KE)
+
+## Sorting Options
+- `age`
+- `created_at`
+- `gender_probability`
+- `country_probability`
+- `country_id`
+- `name`
 
 ## Contributing
 
