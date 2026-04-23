@@ -1,159 +1,146 @@
 package com.mxr.integration.util;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NaturalLanguageQueryParser {
 
-    private static final Map<String, String> COUNTRY_MAPPING = new HashMap<>();
-    private static final Map<String, Integer[]> AGE_RANGE_MAPPING = new HashMap<>();
+    private static final Map<String, String> COUNTRY_MAPPING = new LinkedHashMap<>();
 
     static {
-        // Common country names to country IDs
+        COUNTRY_MAPPING.put("south africa", "ZA");
+        COUNTRY_MAPPING.put("democratic republic of congo", "CD");
+        COUNTRY_MAPPING.put("central african republic", "CF");
+        COUNTRY_MAPPING.put("equatorial guinea", "GQ");
+        COUNTRY_MAPPING.put("sierra leone", "SL");
+        COUNTRY_MAPPING.put("south sudan", "SS");
+        COUNTRY_MAPPING.put("guinea-bissau", "GW");
+        COUNTRY_MAPPING.put("ivory coast", "CI");
+        COUNTRY_MAPPING.put("cape verde", "CV");
+        COUNTRY_MAPPING.put("sao tome", "ST");
+        COUNTRY_MAPPING.put("burkina faso", "BF");
+        COUNTRY_MAPPING.put("mauritius", "MU");
+        COUNTRY_MAPPING.put("seychelles", "SC");
+        COUNTRY_MAPPING.put("botswana", "BW");
+        COUNTRY_MAPPING.put("namibia", "NA");
+        COUNTRY_MAPPING.put("lesotho", "LS");
+        COUNTRY_MAPPING.put("zimbabwe", "ZW");
+        COUNTRY_MAPPING.put("zambia", "ZM");
+        COUNTRY_MAPPING.put("malawi", "MW");
+        COUNTRY_MAPPING.put("tanzania", "TZ");
+        COUNTRY_MAPPING.put("uganda", "UG");
         COUNTRY_MAPPING.put("nigeria", "NG");
-        COUNTRY_MAPPING.put("benin", "BJ");
         COUNTRY_MAPPING.put("ghana", "GH");
         COUNTRY_MAPPING.put("kenya", "KE");
-        COUNTRY_MAPPING.put("uganda", "UG");
-        COUNTRY_MAPPING.put("tanzania", "TZ");
-        COUNTRY_MAPPING.put("south africa", "ZA");
-        COUNTRY_MAPPING.put("egypt", "EG");
         COUNTRY_MAPPING.put("ethiopia", "ET");
         COUNTRY_MAPPING.put("cameroon", "CM");
-        COUNTRY_MAPPING.put("ivory coast", "CI");
         COUNTRY_MAPPING.put("senegal", "SN");
         COUNTRY_MAPPING.put("morocco", "MA");
         COUNTRY_MAPPING.put("algeria", "DZ");
         COUNTRY_MAPPING.put("tunisia", "TN");
         COUNTRY_MAPPING.put("rwanda", "RW");
-        COUNTRY_MAPPING.put("malawi", "MW");
-        COUNTRY_MAPPING.put("zambia", "ZM");
-        COUNTRY_MAPPING.put("zimbabwe", "ZW");
-        COUNTRY_MAPPING.put("botswana", "BW");
-        COUNTRY_MAPPING.put("namibia", "NA");
-        COUNTRY_MAPPING.put("lesotho", "LS");
-        COUNTRY_MAPPING.put("mauritius", "MU");
-        COUNTRY_MAPPING.put("seychelles", "SC");
-        COUNTRY_MAPPING.put("malawi", "MW");
         COUNTRY_MAPPING.put("sudan", "SD");
-        COUNTRY_MAPPING.put("south sudan", "SS");
         COUNTRY_MAPPING.put("djibouti", "DJ");
         COUNTRY_MAPPING.put("eritrea", "ER");
         COUNTRY_MAPPING.put("somalia", "SO");
         COUNTRY_MAPPING.put("liberia", "LR");
-        COUNTRY_MAPPING.put("sierra leone", "SL");
         COUNTRY_MAPPING.put("guinea", "GN");
-        COUNTRY_MAPPING.put("guinea-bissau", "GW");
         COUNTRY_MAPPING.put("mali", "ML");
         COUNTRY_MAPPING.put("mauritania", "MR");
-        COUNTRY_MAPPING.put("cape verde", "CV");
-        COUNTRY_MAPPING.put("sao tome", "ST");
         COUNTRY_MAPPING.put("gabon", "GA");
         COUNTRY_MAPPING.put("congo", "CG");
-        COUNTRY_MAPPING.put("democratic republic of congo", "CD");
-        COUNTRY_MAPPING.put("drc", "CD");
-        COUNTRY_MAPPING.put("equatorial guinea", "GQ");
-        COUNTRY_MAPPING.put("central african republic", "CF");
         COUNTRY_MAPPING.put("chad", "TD");
         COUNTRY_MAPPING.put("niger", "NE");
-        COUNTRY_MAPPING.put("burkina faso", "BF");
         COUNTRY_MAPPING.put("togo", "TG");
         COUNTRY_MAPPING.put("benin", "BJ");
         COUNTRY_MAPPING.put("comoros", "KM");
         COUNTRY_MAPPING.put("maldives", "MV");
-        COUNTRY_MAPPING.put("mauritius", "MU");
-
-        // Age ranges
-        AGE_RANGE_MAPPING.put("young", new Integer[]{16, 24});
-        AGE_RANGE_MAPPING.put("child", new Integer[]{0, 12});
-        AGE_RANGE_MAPPING.put("teenager", new Integer[]{13, 19});
-        AGE_RANGE_MAPPING.put("adult", new Integer[]{20, 59});
-        AGE_RANGE_MAPPING.put("senior", new Integer[]{60, 120});
     }
 
     public static QueryFilterDTO parse(String query) {
-        if (query == null || query.trim().isEmpty()) {
+        if (query == null || query.isBlank()) {
             return null;
         }
 
+        String lowerQuery = query.toLowerCase(Locale.ROOT).trim();
         QueryFilterDTO filter = new QueryFilterDTO();
-        String lowerQuery = query.toLowerCase().trim();
+        boolean matched = false;
 
-        // Parse gender
-        if (lowerQuery.contains("male") && !lowerQuery.contains("female")) {
-            filter.setGender("male");
-        } else if (lowerQuery.contains("female")) {
+        if (containsWholeWord(lowerQuery, "female")) {
             filter.setGender("female");
+            matched = true;
+        } else if (containsWholeWord(lowerQuery, "male")) {
+            filter.setGender("male");
+            matched = true;
         }
 
-        // Parse age groups
-        if (lowerQuery.contains("teenager")) {
+        if (containsWholeWord(lowerQuery, "teenager")) {
             filter.setAgeGroup("teenager");
-            if (!lowerQuery.contains("above") && !lowerQuery.contains("over")) {
-                filter.setMinAge(13);
-                filter.setMaxAge(19);
-            }
-        } else if (lowerQuery.contains("adult")) {
+            filter.setMinAge(13);
+            filter.setMaxAge(19);
+            matched = true;
+        } else if (containsWholeWord(lowerQuery, "adult")) {
             filter.setAgeGroup("adult");
-        } else if (lowerQuery.contains("child")) {
+            filter.setMinAge(20);
+            filter.setMaxAge(59);
+            matched = true;
+        } else if (containsWholeWord(lowerQuery, "child")) {
             filter.setAgeGroup("child");
-        } else if (lowerQuery.contains("senior")) {
+            filter.setMinAge(0);
+            filter.setMaxAge(12);
+            matched = true;
+        } else if (containsWholeWord(lowerQuery, "senior")) {
             filter.setAgeGroup("senior");
+            filter.setMinAge(60);
+            matched = true;
         }
 
-        // Parse "young" keyword (maps to ages 16-24)
-        if (lowerQuery.contains("young")) {
-            filter.setMinAge(16);
-            filter.setMaxAge(24);
+        Integer minAge = extractAgeBoundary(lowerQuery, "above", "over");
+        if (minAge != null) {
+            filter.setMinAge(minAge);
+            matched = true;
         }
 
-        // Parse age numbers
-        parseAgeNumbers(lowerQuery, filter);
+        Integer maxAge = extractAgeBoundary(lowerQuery, "below", "under");
+        if (maxAge != null) {
+            filter.setMaxAge(maxAge);
+            matched = true;
+        }
 
-        // Parse country
         String countryId = extractCountry(lowerQuery);
         if (countryId != null) {
             filter.setCountryId(countryId);
+            matched = true;
         }
 
-        return filter;
+        return matched ? filter : null;
     }
 
-    private static void parseAgeNumbers(String query, QueryFilterDTO filter) {
-        // Look for patterns like "above 30", "over 25", "17 and up"
-        if (query.matches(".*above\\s+\\d+.*") || query.matches(".*over\\s+\\d+.*")) {
-            int age = extractNumber(query);
-            if (age > 0) {
-                filter.setMinAge(age);
-            }
-        }
-
-        if (query.matches(".*below\\s+\\d+.*") || query.matches(".*under\\s+\\d+.*")) {
-            int age = extractNumber(query);
-            if (age > 0) {
-                filter.setMaxAge(age);
-            }
-        }
+    private static boolean containsWholeWord(String text, String word) {
+        return text.matches(".*\\b" + Pattern.quote(word) + "\\b.*");
     }
 
-    private static int extractNumber(String query) {
-        String[] words = query.split("\\s+");
-        for (int i = 0; i < words.length - 1; i++) {
-            if (words[i].matches("above|over|below|under")) {
-                try {
-                    return Integer.parseInt(words[i + 1]);
-                } catch (NumberFormatException e) {
-                    // continue
-                }
-            }
+    private static Integer extractAgeBoundary(String query, String keyword1, String keyword2) {
+        Integer value = extractNumberAfterKeyword(query, keyword1);
+        if (value != null) {
+            return value;
         }
-        return -1;
+        return extractNumberAfterKeyword(query, keyword2);
+    }
+
+    private static Integer extractNumberAfterKeyword(String query, String keyword) {
+        Matcher matcher = Pattern.compile("\\b" + Pattern.quote(keyword) + "\\s+(\\d{1,3})\\b").matcher(query);
+        if (matcher.find()) {
+            return Integer.valueOf(matcher.group(1));
+        }
+        return null;
     }
 
     private static String extractCountry(String query) {
-        // Check for country names in descending order of length to match "South Africa" before "Africa"
         return COUNTRY_MAPPING.entrySet().stream()
-                .sorted((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()))
                 .filter(entry -> query.contains(entry.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
@@ -169,7 +156,6 @@ public class NaturalLanguageQueryParser {
         private Double minGenderProbability;
         private Double minCountryProbability;
 
-        // Getters and Setters
         public String getGender() {
             return gender;
         }
@@ -227,4 +213,3 @@ public class NaturalLanguageQueryParser {
         }
     }
 }
-

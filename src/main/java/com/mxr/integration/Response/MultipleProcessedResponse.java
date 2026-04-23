@@ -1,18 +1,15 @@
 package com.mxr.integration.Response;
 
-import com.mxr.integration.Response.PersonSummary;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 @Data
 @Builder
-@JsonPropertyOrder({"status", "data"})
+@JsonPropertyOrder({"status", "count", "data"})
 public class MultipleProcessedResponse {
-    public String status;
-    public int count;
-    public List<PersonSummary> data;
+    private String status;
+    private int count;
+    private List<PersonSummary> data;
 }
